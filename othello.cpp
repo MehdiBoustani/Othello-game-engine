@@ -16,6 +16,12 @@
 // We use this namespace to avoid writing a lot "std::"
 using namespace std;
 
+// Initialize the directions array
+const int Othello::directions[8][2] = {
+    {-1, -1}, {-1, 0}, {-1, 1},
+    {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}
+};
+
 /**
  * Constructor for the Othello class
  * Initializes the board with empty spaces and sets up the initial pieces

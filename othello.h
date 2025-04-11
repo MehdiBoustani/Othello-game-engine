@@ -68,10 +68,7 @@ class Othello {
          void flipDisc(POSITION pos, int x, int y);
 
          // The 8 possible directions for moves
-         static constexpr int directions[8][2] = {
-            {-1, -1}, {-1, 0}, {-1, 1},
-            {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}
-         };
+         static const int directions[8][2];
 
          // Get all available moves of the current player
          set<POSITION> getAvailableMoves(Colour player);
