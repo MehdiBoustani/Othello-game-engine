@@ -4,6 +4,12 @@
 
 using namespace std;
 
+// Initialize static member
+const int Othello::directions[8][2] = {
+    {-1, -1}, {-1, 0}, {-1, 1},
+    {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}
+};
+
 Othello::Othello() {
     // Initialize 8x8 board with empty spaces
     board = vector<vector<Colour>>(GRID_SIZE, vector<Colour>(GRID_SIZE, EMPTY));
@@ -20,17 +26,17 @@ Othello::Othello() {
 
 Othello::Othello(const vector<vector<Colour>>& board, Colour player){
     if(board.size() != GRID_SIZE){
-        throw length_error("Othello board must have " + to_string(GRID_SIZE) + "rows")
+        throw length_error("Othello board must have " + to_string(GRID_SIZE) + " rows");
     }
 
-    for (size_t i = 0; i < board.size; ++i){
+    for (size_t i = 0; i < board.size(); ++i){
         if(board[i].size() != GRID_SIZE){
-            throw length_error("Othello board must have" + to_string(GRID_SIZE) + "columns")
+            throw length_error("Othello board must have" + to_string(GRID_SIZE) + " columns");
         }
     }
 
     if(player != WHITE && player != BLACK){
-        throw invalid_argument("Player must be WHITE or BLACK")
+        throw invalid_argument("Player must be WHITE or BLACK");
     }
 
     this->board = board;
@@ -38,45 +44,42 @@ Othello::Othello(const vector<vector<Colour>>& board, Colour player){
     this->activePlayer = player;
 }
 
-Othello::getActivePlayer(){
-    return isGameOver() ? EMPTY : activePlayer;
-}
-
-Othello::isGameOver(){
-    // Check if board is full
-    bool isFull = true;
-
-    for(size_t i = 0; i < GRID_SIZE; ++i){
-        for(size_t j = 0; j < GRID_SIZE; ++j){
-            if(board[i][j] == EMPTY){
-                isFull = false;
-                break;
-            }
-        }
-        if(!isFull) break;
+Othello::Colour Othello::getActivePlayer() {
+    // Check if current player has any moves
+    if (!getMoves().empty()) {
+        return activePlayer;
     }
-
-    if(isFull) return true;
-
-    // Check if current player can play
-    if(!getMoves().empty()) return false;
-
-    // If current player can't play, check if opponent can play
-    Colour opponent = (activePlayer == BLACK) ? WHITE : BLACK;
-
-    Colour temp = activePlayer;
-
-    activePlayer = opponent;
-
-    bool opponentCanPlay = !getMoves().empty();
     
-    activePlayer = temp;
-
-    return !opponentCanPlay;
+    // If current player has no moves, check if opponent has moves
+    activePlayer = (activePlayer == BLACK) ? WHITE : BLACK;
+    if (!getMoves().empty()) {
+        return activePlayer;
+    }
+    
+    // If neither player has moves, return EMPTY
+    return EMPTY;
 }
 
-Othello::getWinner(){
-    if(!isGameOver) return EMPTY;
+bool Othello::isGameOver() {
+    // Check if both players have no moves
+    Colour original = activePlayer;
+    
+    // Check for BLACK
+    activePlayer = BLACK;
+    bool hasBlackMoves = !getAvailableMoves(activePlayer).empty();
+    
+    // Check for WHITE
+    activePlayer = WHITE;
+    bool hasWhiteMoves = !getAvailableMoves(activePlayer).empty();
+    
+    // Restore original player
+    activePlayer = original;
+    
+    return !hasBlackMoves && !hasWhiteMoves;
+}
+
+Othello::Colour Othello::getWinner(){
+    if(!isGameOver()) return EMPTY;
 
     unsigned int blackCount = 0;
     unsigned int whiteCount = 0;
@@ -94,95 +97,113 @@ Othello::getWinner(){
         }
     }
 
-    if(blackCount > whiteCount){
-        return BLACK;
-    } 
-    
-    else if(whiteCount > blackCount){
-        return WHITE;
-    } 
-    
-    else{
-        return EMPTY;
-    }
+    return (blackCount > whiteCount) ? BLACK :
+       (whiteCount > blackCount) ? WHITE : EMPTY;
+
 }
 
-Othello::getMoves(){
-    set<POSITION> moves = {};
-
-    if(isGameOver){
-        return moves;
+set<Othello::POSITION> Othello::getMoves() {
+    // Return empty set if game is finished
+    if (isGameOver()) {
+        return set<POSITION>();
     }
 
-    for(size_t i = 0; i < GRID_SIZE; ++i){
-        for(size_t j = 0; j < GRID_SIZE; ++j){
-            if(board[i][j] == EMPTY){
+    return getAvailableMoves(activePlayer);
+}
 
-                POSITION pos = make_pair(i, j);
+set<Othello::POSITION> Othello::getAvailableMoves(Colour player) {
 
-                if(isValidMove(pos)){
+    set<POSITION> moves;
+    
+    Colour originalPlayer = activePlayer;
+    
+    activePlayer = player;
+    
+    for(size_t i = 0; i < GRID_SIZE; ++i) {
+        for(size_t j = 0; j < GRID_SIZE; ++j) {
+            if(board[i][j] == EMPTY) {
+                POSITION pos = std::make_pair(i, j);
+                if(isValidMove(pos)) {
                     moves.insert(pos);
                 }
             }
         }
     }
-
+    
+    activePlayer = originalPlayer;
+    
     return moves;
 }
 
-Othello::play(POSITION pos){
+void Othello::flipDisc(POSITION pos, int x, int y) {
+    int row = pos.first + x;
+    int col = pos.second + y;
+    
+    vector<POSITION> piecesToFlip;
+
+    // While we are on the board
+    while(row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
+        if(board[row][col] == EMPTY) break;
+        
+        if(board[row][col] == activePlayer) {
+            // Flip all pieces in this direction
+            for(const auto& piece : piecesToFlip) {
+                if(piece.first >= 0 && piece.first < GRID_SIZE && 
+                   piece.second >= 0 && piece.second < GRID_SIZE) {
+                    board[piece.first][piece.second] = activePlayer;
+                }
+            }
+            break;
+        }
+        
+        piecesToFlip.push_back(make_pair(row, col));
+        row += x;
+        col += y;
+    }
+}
+
+bool Othello::play(POSITION pos) {
+    // Vérification des limites du tableau
+    if(pos.first < 0 || pos.first >= GRID_SIZE || pos.second < 0 || pos.second >= GRID_SIZE) {
+        return false;
+    }
+
     set<POSITION> moves = getMoves();
     
     // The find method return the end if it is not in the set
-    if(moves.find(pos) == moves.end()){
+    if(moves.find(pos) == moves.end()) {
         return false;
     }
 
     // Place the piece
     board[pos.first][pos.second] = activePlayer;
 
-    // The 8 possible directions
-    const int directions = this->directions;
-
     // For each direction
-    for(const auto& dir : directions){
-        int row = pos.first + dir[0];
-        int col = pos.second + dir[1];
-        vector<POSITION> piecesToFlip;
-
-        // While we are on the board
-        while(row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE){
-            if(board[row][col] == EMPTY) break;
-            
-            if(board[row][col] == activePlayer){
-                // Flip all pieces in this direction
-                for(const auto& piece : piecesToFlip){
-                    board[piece.first][piece.second] = activePlayer;
-                }
-                break;
-            }
-            
-            piecesToFlip.push_back(make_pair(row, col));
-
-            row += dir[0];
-            col += dir[1];
-        }
+    for(int i = 0; i < 8; ++i) {
+        flipDisc(pos, directions[i][0], directions[i][1]);
     }
 
     // Switch player
     activePlayer = (activePlayer == BLACK) ? WHITE : BLACK;
+
+    activePlayer = getActivePlayer();
     
     return true;
 }
 
 bool Othello::isValidMove(POSITION pos){
-    if(board[pos.first][pos.second] != EMPTY) return false;
+    // Vérification des limites du tableau
+    if(pos.first < 0 || pos.first >= GRID_SIZE || pos.second < 0 || pos.second >= GRID_SIZE){
+        return false;
+    }
 
-    const int directions = this->directions;
+    if(board[pos.first][pos.second] != EMPTY) {
+        return false;
+    }
 
-    for(const auto& dir : directions){
-        int row = pos.first + dir[0];
-        int col = pos.second + dir[1];
+    for(int i = 0; i < 8; ++i) {
+        int row = pos.first + directions[i][0];
+        int col = pos.second + directions[i][1];
 
         bool foundOpponent = false;
 
@@ -191,21 +212,23 @@ bool Othello::isValidMove(POSITION pos){
             if(board[row][col] == EMPTY) break;
             
             if(board[row][col] == activePlayer){
-                if(foundOpponent) return true;
+                if(foundOpponent) {
+                    return true;
+                }
                 break;
             }
             
             foundOpponent = true;
 
-            row += dir[0];
-            col += dir[1];
+            row += directions[i][0];
+            col += directions[i][1];
         }
     }
     
     return false;
 }
 
-Othello::value(POSITION pos){
+Othello::Colour Othello::value(POSITION pos){
     if(pos.first < 0 || pos.first >= GRID_SIZE || pos.second < 0 || pos.second >= GRID_SIZE){
         throw out_of_range("Position out of bounds");
     }

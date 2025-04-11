@@ -50,7 +50,12 @@ class Othello {
          // Helper method to check if a move is valid
          bool isValidMove(POSITION pos);
 
-         const int directions[8][2] = {{-1, -1}, {-1, 0}, {-1, 1},
-        {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}
-    };
+         // Helper method to flip discs in a given direction
+         void flipDisc(POSITION pos, int x, int y);
+
+         // The 8 possible directions for moves
+         static const int directions[8][2];
+
+         // Get all available moves of the current player
+         set<POSITION> getAvailableMoves(Colour player);
 };
