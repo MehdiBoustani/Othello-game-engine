@@ -21,6 +21,7 @@ using namespace std;
  * Initializes the board with empty spaces and sets up the initial pieces
  */
 Othello::Othello() {
+
     // Initialize 8x8 board with empty spaces
     board = vector<vector<Colour>>(GRID_SIZE, vector<Colour>(GRID_SIZE, EMPTY));
 
@@ -47,22 +48,28 @@ Othello::Othello() {
  * - invalid_argument if the player is not WHITE or BLACK
  */
 Othello::Othello(const vector<vector<Colour>>& board, Colour player){
+
+    // Check if the board is 8x8 (rows)
     if(board.size() != GRID_SIZE){
         throw length_error("Othello board must have " + to_string(GRID_SIZE) + " rows");
     }
 
+    // Check if the board is 8x8 (columns)
     for (size_t i = 0; i < board.size(); ++i){
         if(board[i].size() != GRID_SIZE){
-            throw length_error("Othello board must have" + to_string(GRID_SIZE) + " columns");
+            throw length_error("Othello board must have " + to_string(GRID_SIZE) + " columns");
         }
     }
 
+    // Check if the player is valid
     if(player != WHITE && player != BLACK){
         throw invalid_argument("Player must be WHITE or BLACK");
     }
 
+    // Initialize the board
     this->board = board;
 
+    // Initialize the player
     this->activePlayer = player;
 }
 
@@ -106,7 +113,8 @@ set<Othello::POSITION> Othello::getAvailableMoves(Colour player) {
     
     // Save the original player
     Colour originalPlayer = activePlayer;
-    
+
+    // Set the current player
     activePlayer = player;
 
     // Check all positions on the board
@@ -118,12 +126,15 @@ set<Othello::POSITION> Othello::getAvailableMoves(Colour player) {
             if(value(pos) == EMPTY) {
 
                 if(isValidMove(pos)) {
+
+                    // Insert the position into the set
                     moves.insert(pos);
                 }
             }
         }
     }
-    
+
+    // Restore the original player
     activePlayer = originalPlayer;
     
     return moves;
