@@ -7,8 +7,6 @@
  * \author Boustani Mehdi (s221594)
  * \date 11/04/2025
  * 
- * Header file for the Othello class that implements the Othello game engine
- * 
  */
 
 #include <set>
