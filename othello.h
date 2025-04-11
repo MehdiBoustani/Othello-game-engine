@@ -1,11 +1,21 @@
+/**
+ * INFO0004-2: - Object-oriented programming projects
+ *  Project 1: Othello Game Engine
+ * 
+ * \file othello.h
+ * \brief Header file for Othello
+ * \author Boustani Mehdi (s221594)
+ * \date 11/04/2025
+ * 
+ * Header file for the Othello class that implements the Othello game engine
+ * 
+ */
+
 #include <set>
 #include <vector>
 #include <utility>
 #include <stdexcept>
-
 using namespace std;
-
-#define GRID_SIZE 8
 
 class Othello {
       public:
@@ -41,11 +51,17 @@ class Othello {
          Colour value(POSITION pos);
 
       private:
+         // Board size constant (8x8)
+         static constexpr int GRID_SIZE = 8; // Using constexpr to ensure compile-time constant
+
          // Current board state
          vector<vector<Colour>> board;
 
          // Player currently playing
          Colour activePlayer;
+
+         // Helper method to check if a position is within bounds of the board
+         bool isInGrid(POSITION pos);
 
          // Helper method to check if a move is valid
          bool isValidMove(POSITION pos);
@@ -54,7 +70,10 @@ class Othello {
          void flipDisc(POSITION pos, int x, int y);
 
          // The 8 possible directions for moves
-         static const int directions[8][2];
+         static constexpr int directions[8][2] = {
+            {-1, -1}, {-1, 0}, {-1, 1},
+            {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}
+         };
 
          // Get all available moves of the current player
          set<POSITION> getAvailableMoves(Colour player);
